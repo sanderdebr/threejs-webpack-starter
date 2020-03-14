@@ -19,14 +19,13 @@ src - Directory for all dev files
     └── assets - Is copied over to build folder with build command. Place external asset files here.
 ```
 
-## Getting started
+# Getting started
 Install dependencies:
-
-**npm install**
+`npm install`
 Then run dev script:
-
-**npm run dev**
+`npm run dev`
 Spins up a webpack dev server at localhost:8080 and keeps track of all js and sass changes to files.
 
-**npm run build**
+# Build
+`npm run build`
 Cleans existing build folder while linting js folder and copies over the public assets folder from src. Then sets environment to production and compiles js and css into build.
