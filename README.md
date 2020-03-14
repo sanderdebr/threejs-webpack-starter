@@ -3,7 +3,7 @@
 A basic boilerplate for a Three.js project including the use of Webpack and ES6 syntax via Babel.
 
 Project Structure
-``` javascript
+```
 build - Directory for built and compressed files from the npm build script
 src - Directory for all dev files
 ├── css - Contains all SCSS files, that are compiled to `src/public/css`
@@ -23,16 +23,22 @@ src - Directory for all dev files
 
 Install dependencies:
 
-`npm install`
+```
+npm install
+```
 
 Then run dev script:
 
-`npm run dev`
+```
+npm run dev
+```
 
 Spins up a webpack dev server at localhost:8080 and keeps track of all js and sass changes to files.
 
 # Build
 
-`npm run build`
+```
+npm run build
+```
 
 Cleans existing build folder while linting js folder and copies over the public assets folder from src. Then sets environment to production and compiles js and css into build.
