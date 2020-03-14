@@ -20,12 +20,19 @@ src - Directory for all dev files
 ```
 
 # Getting started
+
 Install dependencies:
+
 `npm install`
+
 Then run dev script:
+
 `npm run dev`
+
 Spins up a webpack dev server at localhost:8080 and keeps track of all js and sass changes to files.
 
 # Build
+
 `npm run build`
+
 Cleans existing build folder while linting js folder and copies over the public assets folder from src. Then sets environment to production and compiles js and css into build.
