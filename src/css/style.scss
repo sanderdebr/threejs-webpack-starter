@@ -1,11 +1,44 @@
-html,
 body {
-  margin: 0;
-  height: 100%;
+  background-color: #000;
+  color: #888;
+  font-family: Helvetica;
+  line-height: 26px;
+  margin: 0px;
+  overflow: hidden;
 }
 
-#myCanvas {
+canvas {
+  box-sizing: border-box;
+  height: 100%;
+  left: 0;
+  margin: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+#blocker {
+  z-index: 1;
+  position: absolute;
   width: 100%;
   height: 100%;
-  display: block;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+#instructions {
+  width: 100%;
+  height: 100%;
+  font-size: 30px;
+  font-family: "Courier New";
+  display: -webkit-box;
+  display: -moz-box;
+  -webkit-box-orient: horizontal;
+  -moz-box-orient: horizontal;
+  -webkit-box-pack: center;
+  -moz-box-pack: center;
+  -webkit-box-align: center;
+  -moz-box-align: center;
+  color: #ffffff;
+  text-align: center;
+  cursor: pointer;
 }
