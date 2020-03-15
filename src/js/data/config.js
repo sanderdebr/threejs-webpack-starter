@@ -19,6 +19,17 @@ export default {
       z: 0
     }
   },
+  model: {
+    path: "./assets/models/Teapot.json",
+    scale: 20
+  },
+  texture: {
+    path: "./assets/textures/",
+    imageFiles: [
+      { name: "UV", image: "UV_Grid_Sm.jpg" },
+      { name: "Grass", image: "Grass.jpg" }
+    ]
+  },
   ambientLight: {
     enabled: true,
     color: 0x141414

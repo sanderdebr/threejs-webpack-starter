@@ -1,6 +1,6 @@
 // Global imports -
 import * as THREE from "three";
-
+import Config from "../data/config";
 // Local imports
 // Components
 import Renderer from "./components/renderer";
@@ -11,6 +11,10 @@ import Controls from "./components/controls";
 // Helpers
 import Geometry from "./helpers/geometry";
 
+// Model
+import Texture from "./model/texture";
+import Model from "./model/model";
+
 // Managers
 // import DatGUI from "./managers/datGUI";
 
@@ -19,6 +23,9 @@ import Geometry from "./helpers/geometry";
 export default class Main {
   constructor(container) {
     this.container = container;
+
+    // Set loadingscreen
+    this.loading = this.container.querySelector("#loading");
 
     // Main scene creation
     this.scene = new THREE.Scene();
@@ -48,7 +55,32 @@ export default class Main {
     this.geometry.make("box")(10, 10, 10);
     this.geometry.place("blue", [0, 10, 0], [0, 0, 0]);
 
-    // Later add async loading of textures and models
+    // Async loading of textures and models
+    this.texture = new Texture();
+
+    // Start loading the textures and then go on to load the model after the texture Promises have resolved
+    this.texture.load().then(() => {
+      this.manager = new THREE.LoadingManager();
+
+      // Textures loaded, load model
+      this.model = new Model(this.scene, this.manager, this.texture.textures);
+      this.model.load();
+
+      // onProgress callback
+      this.manager.onProgress = (item, loaded, total) => {
+        console.log(`${item}: ${loaded} ${total}`);
+      };
+
+      // All loaders done now
+      this.manager.onLoad = () => {
+        // Everything is now fully loaded
+        // Remove in production!
+        setTimeout(() => {
+          Config.isLoaded = true;
+          this.loading.style.display = "none";
+        }, 2000);
+      };
+    });
 
     // Start render
     this.render();
