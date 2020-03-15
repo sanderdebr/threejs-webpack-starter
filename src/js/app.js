@@ -1,8 +1,19 @@
+import Main from "./app/main";
+
+// Styles
+import "../css/style.scss";
+
+function init() {
+  const container = document.getElementById("container");
+  return new Main(container);
+}
+
+init();
+/*
 import * as THREE from "three";
 import PointerLockControls from "three-pointerlock";
 import dat from "dat.gui";
 import ColorGUIHelper from "./utils";
-import "../css/style.scss";
 
 const application = () => {
   let camera;
@@ -18,16 +29,20 @@ const application = () => {
     const app = document.createElement("div");
     app.id = "app";
     const paused = document.createElement("div");
+    paused.innerText = "Loading...";
     paused.id = "paused";
     const canvas = document.createElement("canvas");
     canvas.id = "canvas";
     document.body.appendChild(app);
     document.body.appendChild(paused);
     document.body.appendChild(canvas);
+
     constants = {
       app: document.getElementById("app"),
       paused: document.getElementById("paused"),
-      canvas: document.getElementById("canvas")
+      canvas: document.getElementById("canvas"),
+      startupText:
+        "Click to start playing... <br/>Use W,A,S,D keys and spacebar to walk around."
     };
   }
 
@@ -85,21 +100,9 @@ const application = () => {
   }
 
   function addControls() {
-    let paused = false;
     controls = new PointerLockControls(camera);
     controls.enabled = true;
     scene.add(controls.getObject());
-    document.body.addEventListener("keydown", e => {
-      if (e.keyCode === 27) {
-        if (!paused) {
-          controls.enabled = false;
-          paused = true;
-        } else {
-          controls.enabled = true;
-          paused = false;
-        }
-      }
-    });
   }
 
   function createRenderer() {
@@ -114,6 +117,26 @@ const application = () => {
     renderer.physicallyCorrectLights = true;
   }
 
+  // Switch the controls on or off
+  function lockChange() {
+    // Turn on controls
+    if (document.pointerLockElement === constants.app) {
+      constants.paused.style.display = "none";
+      controls.enabled = true;
+      // Turn off the controls
+    } else {
+      // Display the pause screen
+      constants.paused.style.display = "";
+      controls.enabled = false;
+    }
+  }
+
+  // Request lock change
+  function getPointerLock() {
+    document.onclick = () => constants.app.requestPointerLock();
+    document.addEventListener("pointerlockchange", lockChange, false);
+  }
+
   function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color("skyblue");
@@ -123,9 +146,11 @@ const application = () => {
     createLights();
     createMeshes();
     createRenderer();
+    getPointerLock();
     addControls();
 
     constants.app.appendChild(constants.canvas);
+    constants.paused.innerHTML = constants.startupText;
   }
 
   function render() {
@@ -134,7 +159,6 @@ const application = () => {
 
   function update() {
     // Animation logic here
-    console.log(controls.enabled);
   }
 
   function onWindowResize() {
@@ -172,70 +196,4 @@ const application = () => {
 };
 
 application();
-
-/* const blue = new THREE.Color("skyblue");*
-
-function init() {sd
-  // Create canvas
-  const app = document.getElementById("app");
-  const canvas = document.createElement("canvas");
-
-  // Create scene and camera
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xffffff);
-  scene.fog = new THREE.Fog(0xffffff, 0, 750);
-  camera = new THREE.PerspectiveCamera(
-    75,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-  );
-  camera.position.z = 5;
-
-  // Add floor
-  const floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
-  floorGeometry.rotateX(-Math.PI / 2);
-  const floorMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
-  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-  scene.add(floor);
-
-  // Add cube
-  const boxGeometry = new THREE.BoxBufferGeometry(20, 20, 20);
-  const boxMaterial = new THREE.MeshPhongMaterial({
-    color: 0xff0000,
-    shininess: 100
-  });
-  // const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-  const box = new THREE.Mesh(boxGeometry, boxMaterial);
-  box.position.x = -60;
-  box.position.y = 50;
-  box.position.z = 0;
-  scene.add(box);
-
-  // Add renderer
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(window.devicePixelRatio);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  function onWindowResize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  }
-
-  // Resize listener
-  window.addEventListener("resize", onWindowResize, false);
-
-  // Only show canvas when loaded
-  app.appendChild(canvas);
-
-  // Render loop
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update(1);
-    renderer.render(scene, camera);
-  }
-  animate();
-} */
+*/
