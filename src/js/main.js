@@ -1,371 +1,228 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import PointerLockControls from "three-pointerlock";
+import dat from "dat.gui";
 import "../css/style.scss";
 
-const UNITWIDTH = 90;
-const UNITHEIGHT = 45;
-
-let renderer;
-let scene;
-let camera;
-let mapSize;
-let controls;
-// let controlsEnabled = false;
-// Flags to determine which direction the player is moving
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-
-// Velocity vector for the player
-const playerVelocity = new THREE.Vector3();
-
-// How fast the player will move
-const PLAYERSPEED = 800.0;
-
-let clock;
-let totalCubesWide; // How many cubes wide the maze will be
-const collidableObjects = []; // An array of collidable objects used later
-const canvas = document.createElement("canvas");
-
-const DINOSCALE = 20;
-const DINOSPEED = 4.0;
-const dinoVelocity = new THREE.Vector3();
-
-{
-  const gltfLoader = new GLTFLoader();
-  const url = "../models/brianhanson_aristosuchus.glb";
-  gltfLoader.load(url, gltf => {
-    const dinoObject = gltf.scene;
-    dinoObject.scale.set(DINOSCALE, DINOSCALE, DINOSCALE);
-    dinoObject.position.set(30, 0, -400);
-    dinoObject.name = "dino";
-    scene.add(dinoObject);
-
-    // Store the dino
-    const dino = scene.getObjectByName("dino");
-  });
-}
-
-// HTML elements to be changed
-const blocker = document.getElementById("blocker");
-
-function degreesToRadians(degrees) {
-  return (degrees * Math.PI) / 180;
-}
-
-// function radiansToDegrees(radians) {
-//   return (radians * 180) / Math.PI;
-// }
-
-function createMazeCubes() {
-  // Maze wall mapping, assuming even square
-  // 1's are cubes, 0's are empty space
-  const map = [
-    [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0],
-    [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0],
-    [0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 1],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0],
-    [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    [1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0],
-    [0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0]
-  ];
-
-  // wall details
-  const cubeGeo = new THREE.BoxGeometry(UNITWIDTH, UNITHEIGHT, UNITWIDTH);
-  const cubeMat = new THREE.MeshPhongMaterial({
-    color: 0x81cfe0
-  });
-
-  // Keep cubes within boundry walls
-  const widthOffset = UNITWIDTH / 2;
-  // Put the bottom of the cube at y = 0
-  const heightOffset = UNITHEIGHT / 2;
-
-  // See how wide the map is by seeing how long the first array is
-  totalCubesWide = map[0].length;
-
-  // Place walls where 1`s are
-  for (let i = 0; i < totalCubesWide; i += 1) {
-    for (let j = 0; j < map[i].length; j += 1) {
-      // If a 1 is found, add a cube at the corresponding position
-      if (map[i][j]) {
-        // Make the cube
-        const cube = new THREE.Mesh(cubeGeo, cubeMat);
-        // Set the cube position
-        cube.position.z = (i - totalCubesWide / 2) * UNITWIDTH + widthOffset;
-        cube.position.y = heightOffset;
-        cube.position.x = (j - totalCubesWide / 2) * UNITWIDTH + widthOffset;
-        // Add the cube
-        scene.add(cube);
-        // Used later for collision detection
-        collidableObjects.push(cube);
-      }
-    }
+class ColorGUIHelper {
+  constructor(object, prop) {
+    this.object = object;
+    this.prop = prop;
   }
-  // The size of the maze will be how many cubes wide the array is * the width of a cube
-  mapSize = totalCubesWide * UNITWIDTH;
+
+  get value() {
+    return `#${this.object[this.prop].getHexString()}`;
+  }
+
+  set value(hexString) {
+    this.object[this.prop].set(hexString);
+  }
 }
 
-function createGround() {
-  // Create ground geometry and material
-  const groundGeo = new THREE.PlaneGeometry(mapSize, mapSize);
-  const groundMat = new THREE.MeshPhongMaterial({
-    color: 0xa0522d,
-    side: THREE.DoubleSide
-  });
+const application = () => {
+  let camera;
+  let renderer;
+  let scene;
+  let material;
+  let cubeMesh;
+  let planeMesh;
+  let controls;
 
-  const ground = new THREE.Mesh(groundGeo, groundMat);
-  ground.position.set(0, 1, 0);
-  // Rotate the place to ground level
-  ground.rotation.x = degreesToRadians(90);
-  scene.add(ground);
-}
+  const constants = {
+    app: document.getElementById("app"),
+    canvas: document.getElementById("canvas")
+  };
 
-function createPerimWalls() {
-  const halfMap = mapSize / 2; // Half the size of the map
-  let sign = 1; // Used to make an amount positive or negative
+  function createCamera() {
+    const fov = 75;
+    const aspect = window.innerWidth / window.innerHeight;
+    const near = 0.1;
+    const far = 1000;
 
-  // Loop through twice, making two perimeter walls at a time
-  for (let i = 0; i < 2; i += 1) {
-    const perimGeo = new THREE.PlaneGeometry(mapSize, UNITHEIGHT);
-    // Make the material double sided
-    const perimMat = new THREE.MeshPhongMaterial({
-      color: 0x464646,
-      side: THREE.DoubleSide
+    camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    camera.position.z = 5;
+  }
+
+  function createLights() {
+    const light = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.75);
+    light.position.set(0.5, 1, 0.75);
+    scene.add(light);
+  }
+
+  function createMaterials() {
+    const cube = new THREE.MeshStandardMaterial({
+      color: 0xff3333,
+      flatShading: true
     });
-    // Make two walls
-    const perimWallLR = new THREE.Mesh(perimGeo, perimMat);
-    const perimWallFB = new THREE.Mesh(perimGeo, perimMat);
-
-    // Create left/right wall
-    perimWallLR.position.set(halfMap * sign, UNITHEIGHT / 2, 0);
-    perimWallLR.rotation.y = degreesToRadians(90);
-    scene.add(perimWallLR);
-    // Used later for collision detection
-    collidableObjects.push(perimWallLR);
-    // Create front/back wall
-    perimWallFB.position.set(0, UNITHEIGHT / 2, halfMap * sign);
-    scene.add(perimWallFB);
-
-    // Used later for collision detection
-    collidableObjects.push(perimWallFB);
-
-    sign = -1; // Swap to negative value
+    cube.color.convertSRGBToLinear();
+    const plane = new THREE.MeshBasicMaterial({ vertexColors: true });
+    material = {
+      cube,
+      plane
+    };
+    return material;
   }
-}
 
-function addLights() {
-  const lightOne = new THREE.DirectionalLight(0xffffff);
-  lightOne.position.set(1, 1, 1);
-  scene.add(lightOne);
-
-  // Add a second light with half the intensity
-  const lightTwo = new THREE.DirectionalLight(0xffffff, 0.5);
-  lightTwo.position.set(1, -1, -1);
-  scene.add(lightTwo);
-}
-
-function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-
-  renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-function render() {
-  renderer.render(scene, camera);
-}
-
-function animatePlayer(delta) {
-  // Gradual slowdown
-  playerVelocity.x -= playerVelocity.x * 10.0 * delta;
-  playerVelocity.z -= playerVelocity.z * 10.0 * delta;
-
-  if (moveForward) {
-    playerVelocity.z -= PLAYERSPEED * delta;
+  function createGeometries() {
+    const cube = new THREE.BoxBufferGeometry(20, 20, 20);
+    const plane = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+    return {
+      cube,
+      plane
+    };
   }
-  if (moveBackward) {
-    playerVelocity.z += PLAYERSPEED * delta;
-  }
-  if (moveLeft) {
-    playerVelocity.x -= PLAYERSPEED * delta;
-  }
-  if (moveRight) {
-    playerVelocity.x += PLAYERSPEED * delta;
-  }
-  if (!(moveForward || moveBackward || moveLeft || moveRight)) {
-    // No movement key being pressed. Stop movememnt
-    playerVelocity.x = 0;
-    playerVelocity.z = 0;
-  }
-  controls.getObject().translateX(playerVelocity.x * delta);
-  controls.getObject().translateZ(playerVelocity.z * delta);
-}
 
-function animateDino(delta, dino) {
-  const myDino = dino;
-  // Gradual slowdown
-  dinoVelocity.x -= dinoVelocity.x * 10.0 * delta;
-  dinoVelocity.z -= dinoVelocity.z * 10.0 * delta;
+  function createMeshes() {
+    const materials = createMaterials();
+    const geometries = createGeometries();
+    cubeMesh = new THREE.Mesh(geometries.cube, materials.cube);
+    planeMesh = new THREE.Mesh(geometries.plane, materials.plane);
+    const group = new THREE.Group();
+    group.add(cubeMesh);
+    group.add(planeMesh);
 
-  dinoVelocity.z += DINOSPEED * delta;
-  // Move the dino
-  myDino.translateZ(dinoVelocity.z * delta);
-}
+    // Add mesh to scene
+    scene.add(group);
+  }
 
-function animate() {
-  render();
-  requestAnimationFrame(animate);
-  // Get the change in time between frames
-  const delta = clock.getDelta();
-  animatePlayer(delta);
-  animateDino();
-}
-
-function lockChange(dino) {
-  // Turn on controls
-  if (document.pointerLockElement === canvas) {
-    // Hide blocker and instructions
-    blocker.style.display = "none";
+  function addControls() {
+    controls = new PointerLockControls(camera);
     controls.enabled = true;
-    // Turn off the controls
-  } else {
-    // Display the blocker and instruction
-    blocker.style.display = "";
-    controls.enabled = false;
+    scene.add(controls.getObject());
   }
-}
 
-function getPointerLock() {
-  document.onclick = function() {
-    canvas.requestPointerLock();
-  };
-  document.addEventListener("pointerlockchange", lockChange, false);
-}
+  function createRenderer() {
+    renderer = new THREE.WebGLRenderer({
+      canvas: constants.canvas,
+      antialias: true
+    });
 
-function listenForPlayerMovement() {
-  // A key has been pressed
-  const onKeyDown = function(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87: // w
-        moveForward = true;
-        break;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.gammaFactor = 2.2;
+    renderer.gammaOutput = true;
+    renderer.physicallyCorrectLights = true;
+  }
 
-      case 37: // left
-      case 65: // a
-        moveLeft = true;
-        break;
+  function init() {
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color("skyblue");
 
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
+    createCamera();
+    createLights();
+    createMeshes();
+    createRenderer();
+    addControls();
 
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-      default:
-        return null;
-    }
-    return null;
-  };
+    constants.app.appendChild(constants.canvas);
+  }
 
-  // A key has been released
-  const onKeyUp = function(event) {
-    switch (event.keyCode) {
-      case 38: // up
-      case 87: // w
-        moveForward = false;
-        break;
+  function render() {
+    renderer.render(scene, camera);
+  }
 
-      case 37: // left
-      case 65: // a
-        moveLeft = false;
-        break;
+  function update() {
+    // Animation logic here
+  }
 
-      case 40: // down
-      case 83: // s
-        moveBackward = false;
-        break;
+  function onWindowResize() {
+    constants.canvas.width = window.innerWidth;
+    constants.canvas.height = window.innerHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
 
-      case 39: // right
-      case 68: // d
-        moveRight = false;
-        break;
-      default:
-        return null;
-    }
-    return null;
-  };
+  window.addEventListener("resize", onWindowResize);
 
-  // Add event listeners for when movement keys are pressed and released
-  document.addEventListener("keydown", onKeyDown, false);
-  document.addEventListener("keyup", onKeyUp, false);
-}
+  function animationLoop() {
+    update();
+    render();
+    controls.update();
+  }
 
-function init() {
-  clock = new THREE.Clock();
-  listenForPlayerMovement();
-  // Create the scene
+  init();
+
+  controls.update();
+  renderer.setAnimationLoop(animationLoop);
+
+  const gui = new dat.GUI({ autoPlace: true });
+  const folder = gui.addFolder(`Cube`);
+
+  folder
+    .addColor(new ColorGUIHelper(material.cube, "color"), "value") //
+    .name("color")
+    .onChange(animationLoop);
+
+  folder
+    .add(cubeMesh.scale, "x", 0.1, 1.5) //
+    .name("scale x")
+    .onChange(animationLoop);
+};
+
+application();
+
+/* const blue = new THREE.Color("skyblue");*
+
+function init() {sd
+  // Create canvas
+  const app = document.getElementById("app");
+  const canvas = document.createElement("canvas");
+
+  // Create scene and camera
   scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xffffff);
+  scene.fog = new THREE.Fog(0xffffff, 0, 750);
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.z = 5;
 
-  // Add some fog
-  scene.fog = new THREE.FogExp2(0xcccccc, 0.0015);
+  // Add floor
+  const floorGeometry = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+  floorGeometry.rotateX(-Math.PI / 2);
+  const floorMaterial = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+  scene.add(floor);
 
-  // Create canvas and attach to DOM
-  document.body.appendChild(canvas);
+  // Add cube
+  const boxGeometry = new THREE.BoxBufferGeometry(20, 20, 20);
+  const boxMaterial = new THREE.MeshPhongMaterial({
+    color: 0xff0000,
+    shininess: 100
+  });
+  // const boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+  const box = new THREE.Mesh(boxGeometry, boxMaterial);
+  box.position.x = -60;
+  box.position.y = 50;
+  box.position.z = 0;
+  scene.add(box);
 
-  // Render settings
-  renderer = new THREE.WebGLRenderer({ canvas });
-  renderer.setClearColor(scene.fog.color);
+  // Add renderer
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // Camera settings
-  camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    1,
-    2000
-  );
-  camera.position.y = 20;
-  camera.position.x = 0;
-  camera.position.z = 0;
-  scene.add(camera);
+  function onWindowResize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+  }
 
-  // Add walls of maze
-  createMazeCubes();
-  createGround();
-  createPerimWalls();
-
-  // Add lights
-  addLights();
-
-  // Listen to resizes
+  // Resize listener
   window.addEventListener("resize", onWindowResize, false);
 
-  // Add controls
-  controls = new PointerLockControls(camera);
-  scene.add(controls.getObject());
-}
+  // Only show canvas when loaded
+  app.appendChild(canvas);
 
-getPointerLock();
-init();
-animate();
+  // Render loop
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update(1);
+    renderer.render(scene, camera);
+  }
+  animate();
+} */
