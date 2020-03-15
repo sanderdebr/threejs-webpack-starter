@@ -1,22 +1,8 @@
 import * as THREE from "three";
 import PointerLockControls from "three-pointerlock";
 import dat from "dat.gui";
+import ColorGUIHelper from "./utils";
 import "../css/style.scss";
-
-class ColorGUIHelper {
-  constructor(object, prop) {
-    this.object = object;
-    this.prop = prop;
-  }
-
-  get value() {
-    return `#${this.object[this.prop].getHexString()}`;
-  }
-
-  set value(hexString) {
-    this.object[this.prop].set(hexString);
-  }
-}
 
 const application = () => {
   let camera;
@@ -26,11 +12,24 @@ const application = () => {
   let cubeMesh;
   let planeMesh;
   let controls;
+  let constants;
 
-  const constants = {
-    app: document.getElementById("app"),
-    canvas: document.getElementById("canvas")
-  };
+  function setupDOM() {
+    const app = document.createElement("div");
+    app.id = "app";
+    const paused = document.createElement("div");
+    paused.id = "paused";
+    const canvas = document.createElement("canvas");
+    canvas.id = "canvas";
+    document.body.appendChild(app);
+    document.body.appendChild(paused);
+    document.body.appendChild(canvas);
+    constants = {
+      app: document.getElementById("app"),
+      paused: document.getElementById("paused"),
+      canvas: document.getElementById("canvas")
+    };
+  }
 
   function createCamera() {
     const fov = 75;
@@ -65,6 +64,7 @@ const application = () => {
   function createGeometries() {
     const cube = new THREE.BoxBufferGeometry(20, 20, 20);
     const plane = new THREE.PlaneBufferGeometry(2000, 2000, 100, 100);
+    plane.rotateX(-Math.PI / 2);
     return {
       cube,
       plane
@@ -85,9 +85,21 @@ const application = () => {
   }
 
   function addControls() {
+    let paused = false;
     controls = new PointerLockControls(camera);
     controls.enabled = true;
     scene.add(controls.getObject());
+    document.body.addEventListener("keydown", e => {
+      if (e.keyCode === 27) {
+        if (!paused) {
+          controls.enabled = false;
+          paused = true;
+        } else {
+          controls.enabled = true;
+          paused = false;
+        }
+      }
+    });
   }
 
   function createRenderer() {
@@ -95,7 +107,6 @@ const application = () => {
       canvas: constants.canvas,
       antialias: true
     });
-
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.gammaFactor = 2.2;
@@ -107,6 +118,7 @@ const application = () => {
     scene = new THREE.Scene();
     scene.background = new THREE.Color("skyblue");
 
+    setupDOM();
     createCamera();
     createLights();
     createMeshes();
@@ -122,6 +134,7 @@ const application = () => {
 
   function update() {
     // Animation logic here
+    console.log(controls.enabled);
   }
 
   function onWindowResize() {
