@@ -28,7 +28,11 @@ export default class Main {
 
     // Components instantiations
     this.camera = new Camera(this.renderer.threeRenderer);
-    this.controls = new Controls(this.camera.threeCamera, container);
+    this.controls = new Controls(
+      this.scene,
+      this.camera.threeCamera,
+      container
+    );
     this.light = new Light(this.scene);
 
     // Create and place lights in scene
@@ -37,8 +41,12 @@ export default class Main {
 
     // Create and place geo in scene
     this.geometry = new Geometry(this.scene);
-    this.geometry.make("plane")(150, 150, 10, 10);
-    this.geometry.place([0, -40, 0], [Math.PI / 2, 0, 0]);
+    this.geometry.make("plane")(300, 300, 10, 10);
+    this.geometry.place("red", [0, 0, 0], [Math.PI / 2, 0, 0]);
+
+    // Add cube
+    this.geometry.make("box")(10, 10, 10);
+    this.geometry.place("blue", [0, 10, 0], [0, 0, 0]);
 
     // Later add async loading of textures and models
 
@@ -48,7 +56,6 @@ export default class Main {
 
   render() {
     this.renderer.render(this.scene, this.camera.threeCamera);
-
     this.controls.threeControls.update();
 
     // RAF

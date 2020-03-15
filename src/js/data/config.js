@@ -2,14 +2,15 @@
 export default {
   isDev: true,
   isLoaded: false,
+  startupText: "Click to start. <br/>Use W,A,S,D keys to walk around.",
   camera: {
     fov: 75,
     aspect: 1,
     near: 0.1,
     far: 1000,
     posX: 0,
-    posY: 30,
-    posZ: 40
+    posY: 0,
+    posZ: 15
   },
   controls: {
     target: {

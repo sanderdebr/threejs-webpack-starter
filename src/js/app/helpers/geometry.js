@@ -23,20 +23,17 @@ export default class Geometry {
       };
     }
 
-    if (type === "sphere") {
-      return (radius, widthSegments = 32, heightSegments = 32) => {
-        this.geo = new THREE.SphereGeometry(
-          radius,
-          widthSegments,
-          heightSegments
-        );
+    if (type === "box") {
+      return (width = 10, height = 10, depth = 10) => {
+        this.geo = new THREE.BoxBufferGeometry(width, height, depth);
       };
     }
+
     return null;
   }
 
-  place(position, rotation) {
-    const material = new Material(0xeeeeee).standard;
+  place(color, position, rotation) {
+    const material = new Material(color).standard;
     const mesh = new THREE.Mesh(this.geo, material);
 
     // Use ES6 spread to set position and rotation from passed in array
