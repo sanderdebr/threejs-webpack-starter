@@ -2,7 +2,7 @@ import * as THREE from "three";
 
 // USe this class as a helper to set up some default materials
 export default class Material {
-  constructor(color) {
+  constructor(color, texture) {
     this.basic = new THREE.MeshBasicMaterial({
       color,
       side: THREE.DoubleSide
@@ -17,5 +17,10 @@ export default class Material {
     });
 
     this.wire = new THREE.MeshBasicMaterial({ wireframe: true });
+
+    this.texture = new THREE.MeshPhongMaterial({
+      map: texture,
+      side: THREE.DoubleSide
+    });
   }
 }

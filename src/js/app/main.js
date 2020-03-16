@@ -7,6 +7,7 @@ import Renderer from "./components/renderer";
 import Camera from "./components/camera";
 import Light from "./components/light";
 import Controls from "./components/controls";
+import Raycaster from "./components/raycaster";
 
 // Helpers
 import Geometry from "./helpers/geometry";
@@ -42,18 +43,16 @@ export default class Main {
     );
     this.light = new Light(this.scene);
 
+    // Raycaster
+    this.raycaster = new Raycaster(
+      this.scene,
+      this.camera.threeCamera,
+      this.renderer.threeRenderer
+    );
+
     // Create and place lights in scene
     const lights = ["ambient", "directional", "point", "hemi"];
     lights.forEach(light => this.light.place(light));
-
-    // Create and place geo in scene
-    this.geometry = new Geometry(this.scene);
-    this.geometry.make("plane")(300, 300, 10, 10);
-    this.geometry.place("red", [0, 0, 0], [Math.PI / 2, 0, 0]);
-
-    // Add cube
-    this.geometry.make("box")(10, 10, 10);
-    this.geometry.place("blue", [0, 10, 0], [0, 0, 0]);
 
     // Async loading of textures and models
     this.texture = new Texture();
@@ -62,9 +61,24 @@ export default class Main {
     this.texture.load().then(() => {
       this.manager = new THREE.LoadingManager();
 
-      // Textures loaded, load model
+      // Textures loaded, load models
       this.model = new Model(this.scene, this.manager, this.texture.textures);
       this.model.load();
+
+      // Add plane
+      this.geometry = new Geometry(this.scene);
+      this.geometry.make("plane")(300, 300, 10, 10);
+      this.geometry.place(
+        null,
+        this.texture.textures.Grass,
+        "texture",
+        [0, 0, 0],
+        [Math.PI / 2, 0, 0]
+      );
+
+      // Add cube
+      this.geometry.make("box")(10, 10, 10);
+      this.geometry.place("blue", null, "standard", [100, 10, 0], [0, 0, 0]);
 
       // onProgress callback
       this.manager.onProgress = (item, loaded, total) => {
@@ -78,7 +92,7 @@ export default class Main {
         setTimeout(() => {
           Config.isLoaded = true;
           this.loading.style.display = "none";
-        }, 2000);
+        }, 500);
       };
     });
 
@@ -89,6 +103,7 @@ export default class Main {
   render() {
     this.renderer.render(this.scene, this.camera.threeCamera);
     this.controls.threeControls.update();
+    this.raycaster.render();
 
     // RAF
     requestAnimationFrame(this.render.bind(this)); // Bind the main class instead of window object

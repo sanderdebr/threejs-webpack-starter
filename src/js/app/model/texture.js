@@ -36,7 +36,7 @@ export default class Texture {
               const modelOBJ = {};
               modelOBJ[imageFile.name] = myTexture;
               if (modelOBJ[imageFile.name] instanceof THREE.Texture)
-                setTimeout(() => resolve(modelOBJ), 1000);
+                resolve(modelOBJ);
             },
             Helpers.logProgress(),
             xhr =>

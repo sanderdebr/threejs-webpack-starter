@@ -32,8 +32,8 @@ export default class Geometry {
     return null;
   }
 
-  place(color, position, rotation) {
-    const material = new Material(color).standard;
+  place(color = "red", texture, type = "standard", position, rotation) {
+    const material = new Material(color, texture)[type];
     const mesh = new THREE.Mesh(this.geo, material);
 
     // Use ES6 spread to set position and rotation from passed in array
