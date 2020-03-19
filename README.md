@@ -2,11 +2,14 @@
 
 A basic boilerplate for a Three.js project including the use of Webpack and ES6 syntax via Babel.
 
-## work in progress
+### work in progress
 
 Project Structure
 ```
 dist - Directory for built and compressed files from the npm build script
+├── assets
+│   ├── models
+│   ├── textures
 src - Directory for all dev files
 ├── css - Contains all SCSS files, that are compiled to `src/public/css`
 ├── js - All the Three.js app files, with `app.js` as entry point. Compiled to `src/public/js` with webpack
@@ -40,4 +43,3 @@ Spins up a webpack dev server at localhost:8080 and keeps track of all js and sa
 ```
 npm run build
 ```
-
